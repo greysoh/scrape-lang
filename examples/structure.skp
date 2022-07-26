@@ -1,0 +1,10 @@
+Sprite.new("Sprite1", function() {
+  var obamasLastName = "Obama";
+  obamasLastName = "Barack";
+  
+  Sprite.on("start", function() {
+    while (true) {
+
+    }
+  })
+})
