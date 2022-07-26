@@ -1,3 +1,0 @@
-var init = ["hello", "world"];
-init.push("!");
-init = ["hello", "world"];

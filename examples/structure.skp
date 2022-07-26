@@ -1,10 +1,13 @@
 Sprite.new("Sprite1", function() {
-  var obamasLastName = "Obama";
-  obamasLastName = "Barack";
+  var obamasLastName;
   
   Sprite.on("start", function() {
-    while (true) {
+    obamasLastName = prompt("What is Obama's last name?");
 
+    if (obamasLastName == "Obama") {
+      Sprite.say("You are correct!");
+    } else {
+      Sprite.say("You are wrong!");
     }
   })
 })

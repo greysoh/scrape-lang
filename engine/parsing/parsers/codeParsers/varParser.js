@@ -173,6 +173,26 @@ export function varParser(input) {
     }
 
     return token;
+  } else if (input.trim().split(" ")[1] && input.trim().split(" ")[1] == "=") {
+    // String variable assignment
+    const data = input.trim().split(" ");
+
+    if (!data[2]) {
+      abort("SyntaxError", "No new varaible value", "N/a", input); // Throws an error if it's not a value
+    }
+
+    token.type = "setVar"; // Sets the type to setVar
+    token.name = data[0]; // Sets the name
+
+    let val = data.slice(2).join(" "); // Gets the value
+    if (val.endsWith(";")) val = val.slice(0, -1); // Removes the ;, if it exists
+
+    const value = varParseArgs(val); // Parses the value
+
+    token.value = value; // Sets the value
+    token.hasValue = true; // Sets the hasValue to true
+
+    return token; // Returns the token
   } else if (
     !input // Checks if it contains ( or ), so it doesn't get confused with a function. I'm too lazy to do a proper fix. Enjoy the bodge.
       .trim()
@@ -213,26 +233,6 @@ export function varParser(input) {
     } else {
       abort("SyntaxError", "Invalid array assignment", "N/a", input); // Throws an error if it's not a value
     }
-
-    return token; // Returns the token
-  } else if (input.trim().split(" ")[1] && input.trim().split(" ")[1] == "=") {
-    // String variable assignment
-    const data = input.trim().split(" ");
-
-    if (!data[2]) {
-      abort("SyntaxError", "No new varaible value", "N/a", input); // Throws an error if it's not a value
-    }
-
-    token.type = "setVar"; // Sets the type to setVar
-    token.name = data[0]; // Sets the name
-
-    let val = data.slice(2).join(" "); // Gets the value
-    if (val.endsWith(";")) val = val.slice(0, -1); // Removes the ;, if it exists
-
-    const value = varParseArgs(val); // Parses the value
-
-    token.value = value; // Sets the value
-    token.hasValue = true; // Sets the hasValue to true
 
     return token; // Returns the token
   }
