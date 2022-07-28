@@ -1,7 +1,5 @@
 import { abort } from "../../codeErrors.js";
 
-// TODO: Remove obvious comments.
-
 /**
  * Parses args like a normal human being.
  * @param {string} str Arguments to parse
@@ -11,26 +9,30 @@ export function parseArgsNS(str) {
   let value = {}; // The value of the argument
 
   if (str.startsWith('"') && str.endsWith('"')) {
-    // Checks if it's a string
-    value.type = "string"; // Sets the type to string, and gets the value using substring
+    // Checks if it's a string, and parses data
+    value.type = "string";
     value.value = str.substring(1, str.length - 1);
 
     return value;
   } else if (str.startsWith("[") && str.endsWith("]")) {
     // Checks if it's an array
-    let tempStr = str; // Gets the array
+    let tempStr = str;
     tempStr = tempStr.replaceAll(", ", ","); // Removes spaces
 
-    value.type = "array"; // Sets the type to array
+    value.type = "array";
 
     let values = tempStr.substring(1, tempStr.length - 1).split(","); // Gets the values
 
-    value.value = []; // Creates the array
+    value.value = [];
 
     for (const i in values) {
       const item = parseArgsNS(values[i]); // Parses the item
 
-      value.value.push(item); // Adds the item to the array
+      if (item == null) {
+        abort("SyntaxError", "Invalid array item", "N/a", str);
+      }
+
+      value.value.push(item);
     }
 
     return value; // Returns the array
@@ -69,23 +71,22 @@ export function varParseArgs(str, disableArrays) {
     ["plus", "minus", "times", "dividedBy"],
   ];
 
-  let values = []; // The values of the arguments
+  let values = [];
 
   for (const i in strSplit) {
-    let value = {}; // The value of the argument
+    let value = {};
 
     if (lookup[0].indexOf(strSplit[i]) != -1) {
       // Checks if it's a math operator
       value.type = "operator";
       value.value = lookup[1][lookup[0].indexOf(strSplit[i])]; // Gets the value from the lookup
     } else {
-      value.type = "argument"; // Sets the type to argument
-      value.value = parseArgsNS(strSplit[i]); // Gets the value from the parser
+      value.type = "argument";
+      value.value = parseArgsNS(strSplit[i]);
 
       if (!Number.isNaN(parseInt(strSplit[i]))) {
         // Checks if it's a number
         abort(
-          // Throws an error if it's a number
           "SyntaxError",
           "Numbers are not supported by Scratch.",
           "N/a",
@@ -93,21 +94,19 @@ export function varParseArgs(str, disableArrays) {
         );
       } else if (value.value == null) {
         // Checks if it's a variable
-        value.type = "variable"; // Sets the type to variable
-        value.value = { type: "var", name: strSplit[i] }; // Gets the value from the parser
+        value.type = "variable";
+        value.value = { type: "var", name: strSplit[i] };
       } else if (value.value.type == "array") {
         // Checks if it's an array
         if (disableArrays)
-          // Checks if it's disabled
           abort(
-            // Throws an error if it's disabled
             "SyntaxError",
             "Nested arrays are not supported by Scratch.",
             "N/a",
             str
           );
 
-        value.type = "array"; // Sets the type to array
+        value.type = "array";
       }
     }
 
@@ -120,79 +119,105 @@ export function varParseArgs(str, disableArrays) {
 export function varParser(input) {
   let token = {};
 
-  if (input.trim().startsWith("var")) {
+  if (input.trim().startsWith("var") || input.trim().startsWith("list")) {
     // Normal variable parsing
 
-    const data = input.trim().split(" "); // Gets the data
+    const data = input.trim().split(" ");
+
+    const isList = data[1] == "list"; // Checks if it's a list
 
     let name = data[1]; // Gets the name
     if (name.endsWith(";")) name = name.slice(0, -1); // Removes the ;, if it exists
 
-    token.type = "var"; // Sets the type to variable
+    token.type = data[0]; // Sets the type to variable
     token.name = name; // Sets the name
 
     if (data[2] == "=") {
-      // Checks if we're setting a value
-      token.hasValue = true; // Sets the hasValue to true
+      token.hasValue = true;
 
       let val = data.slice(3).join(" "); // Gets the value
       if (val.endsWith(";")) val = val.slice(0, -1); // Removes the ;, if it exists
 
-      const value = varParseArgs(val); // Parses the value
+      const value = parseArgs(val)
 
-      token.value = value; // Sets the value
-      token.hasValue = true; // Sets the hasValue to true
+      if (value.type != "array" && isList) {
+        abort("SyntaxError", "Lists can only contain arrays.", "N/a", input);
+      } else if (value.type == "array" && !isList) {
+        abort(
+          "SyntaxError",
+          "Arrays can only be used with lists.",
+          "N/a",
+          input
+        );
+      }
+
+      token.value = value;
+      token.hasValue = true;
     } else {
-      token.hasValue = false; // Sets the hasValue to false
+      token.hasValue = false;
     }
 
     return token; // Returns the token
-  } else if (input.trim().startsWith("global var")) {
+  } else if (
+    input.trim().startsWith("global var") ||
+    input.trim().startsWith("global list")
+  ) {
     // Global variable parsing
-    const data = input.trim().split(" "); // Gets the data
+    const data = input.trim().split(" "); 
+
+    const isList = data[1] == "list";
 
     let name = data[2]; // Gets the name
     if (name.endsWith(";")) name = name.slice(0, -1); // Removes the ;, if it exists
 
-    token.type = "globalVar"; // Sets the type to global variable
-    token.name = name; // Sets the name
+    token.type = isList ? "globalList" : "globalVar"; // Sets the type
+    token.name = name;
 
     if (data[3] == "=") {
-      // Checks if we're setting a value
-      token.hasValue = true; // Sets the hasValue to true
+      token.hasValue = true;
 
-      let val = data.slice(3).join(" "); // Gets the value
+      let val = data.slice(4).join(" "); // Gets the value
       if (val.endsWith(";")) val = val.slice(0, -1); // Removes the ;, if it exists
 
-      const value = varParseArgs(val); // Parses the value
+      const value = parseArgs(val);
 
-      token.value = value; // Sets the value
-      token.hasValue = true; // Sets the hasValue to true
+      if (value.type != "array" && isList) {
+        abort("SyntaxError", "Lists can only contain arrays.", "N/a", input);
+      } else if (value.type == "array" && !isList) {
+        abort(
+          "SyntaxError",
+          "Arrays can only be used with lists.",
+          "N/a",
+          input
+        );
+      }
+
+      token.value = value.value;
+      token.hasValue = true;
     } else {
-      token.hasValue = false; // Sets the hasValue to false
+      token.hasValue = false;
     }
 
     return token;
   } else if (input.trim().split(" ")[1] && input.trim().split(" ")[1] == "=") {
-    // String variable assignment
     const data = input.trim().split(" ");
 
     if (!data[2]) {
       abort("SyntaxError", "No new varaible value", "N/a", input); // Throws an error if it's not a value
     }
 
-    token.type = "setVar"; // Sets the type to setVar
-    token.name = data[0]; // Sets the name
+    token.type = "setVar";
+    token.name = data[0];
 
     let val = data.slice(2).join(" "); // Gets the value
     if (val.endsWith(";")) val = val.slice(0, -1); // Removes the ;, if it exists
 
-    const value = varParseArgs(val); // Parses the value
+    const value = varParseArgs(val);
 
-    token.value = value; // Sets the value
-    token.hasValue = true; // Sets the hasValue to true
+    token.value = value;
+    token.hasValue = true;
 
-    return token; // Returns the token
+    return token;
   } else if (
     !input // Checks if it contains ( or ), so it doesn't get confused with a function. I'm too lazy to do a proper fix. Enjoy the bodge.
       .trim()
@@ -203,37 +228,40 @@ export function varParser(input) {
       input.trim().split(" ")[0].split("[")[1] && // Checks if it contains [, and ], within the first space, to determine if it's an array.
       input.trim().split(" ")[0].split("[")[1].split("]")[0])
   ) {
-    // Array assignment
-    const data = input.trim().split(" "); // Gets the data
-    const intChange = data[0].split("[")[1].split("]")[0]; // Gets the index of the array
+    const data = input.trim().split(" ");
+    let intChange = "";
 
-    token.type = "setVarArray"; // Sets the type to setVarArray
-    token.name = data[0].split("[")[0]; // Sets the name
+    try {
+      intChange = data[0].split("[")[1].split("]")[0];
+    } catch (e) {
+      abort("SyntaxError", "Not a valid variable", "N/a", input);
+    }
 
-    token.index = parseInt(intChange); // Sets the index
+    token.type = "setVarArray";
+    token.name = data[0].split("[")[0];
+
+    token.index = parseInt(intChange);
 
     if (Number.isNaN(token.index)) {
       // Checks if it's a number
-      abort("SyntaxError", "Array index is not a number", "N/a", input); // Throws an error if it's not a number
+      abort("SyntaxError", "Array index is not a number", "N/a", input);
     }
 
     if (!data[1]) {
-      // Checks if it's a value
       abort("SyntaxError", "No new array value", "N/a", input); // Throws an error if it's not a value
     }
 
     if (data[1] == "=") {
-      // Checks if we're setting a value
       let val = data.slice(2).join(" "); // Gets the value
       if (val.endsWith(";")) val = val.slice(0, -1); // Removes the ;, if it exists
 
-      const value = varParseArgs(val, true); // Parses the value
+      const value = varParseArgs(val, true);
 
-      token.value = value; // Sets the value
+      token.value = value;
     } else {
-      abort("SyntaxError", "Invalid array assignment", "N/a", input); // Throws an error if it's not a value
+      abort("SyntaxError", "Invalid array assignment", "N/a", input);
     }
 
-    return token; // Returns the token
+    return token;
   }
 }
