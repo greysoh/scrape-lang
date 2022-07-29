@@ -1,8 +1,21 @@
 import { abort } from "../../../parsing/codeErrors.js";
+import { getLayout } from "../mod.js";
 
 export function generateVarName(lex, name, isList) {
   const type = isList ? "List" : "Var";
   return lex.name + type + "_" + name;
+}
+
+export function mergeObjects(...objs) {
+  let newObj = {};
+
+  for (const obj of objs) {
+    for (const key of Object.keys(obj)) {
+      newObj[key] = obj[key];
+    }
+  }
+
+  return newObj;
 }
 
 function parseList(list) {
@@ -25,6 +38,8 @@ function parseList(list) {
  * @param {boolean} isTopLevel Whether this is the backdrop or not
  */
 export function parseSprite(lexes, isTopLevel, name, prevSpriteData) {
+  const layout = getLayout();
+
   const spriteData = prevSpriteData ? prevSpriteData : [];
   let currentSprite = {
     lists: {},
@@ -123,6 +138,39 @@ export function parseSprite(lexes, isTopLevel, name, prevSpriteData) {
         elem.lists[name] = [lex.name, []];
       } else {
         elem.lists[name] = [lex.name, parseList(lex.value)];
+      }
+    } else if (lex.type == "command") {
+      let functionVal = "";
+
+      function getData(array, item) {
+        let prevItem = item;
+        
+        for (const i of array) {
+          if (prevItem[i]) {
+            prevItem = prevItem[i];
+          } else {
+            return undefined;
+          }
+        }
+        
+        return prevItem;
+      }
+
+      const newCommand = lex.command;
+      newCommand.unshift("commands");
+
+      functionVal = getData(newCommand, layout);
+
+      if (!functionVal) {
+        abort("Error", "Command not found.", "N/a", lex.command.join("."));
+      }
+
+      const data = functionVal(lex, currentSprite, spriteData);
+
+      if (data.mergeSprite) {
+        currentSprite = mergeObjects(currentSprite, data.mergeSprite);
+      } else if (data.addSprites) {
+        spriteData.push(...data.addSprites);
       }
     }
   }
