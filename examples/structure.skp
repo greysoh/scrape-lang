@@ -1,3 +1,8 @@
+list a;
+
+global list c = ["a", "b"];
+global var d = "";
+
 Sprite.new("Sprite1", function() {
   var obamasLastName;
   

@@ -9,24 +9,14 @@ const meta = {
 
 export function convert(lex) {
   const layout = getLayout();
-
-  console.log("Lex dump:");
-  console.log(lex);
+  const parseSprite = layout.sprites.parseSprite;
 
   let json = {
-    targets: [{
-      isStage: true,
-      name: "Stage",
-      variables: {}
-    }],
+    targets: [],
     monitors: [],
     extensions: [],
     meta: meta
   };
 
-  for (const i of lex) {
-    if (i.type == "var") { // Top level/backdrop level handling
-      const jsonOut = layout.misc.parseVar(i, json.targets[0].variables);
-    }
-  }
+  const data = parseSprite(lex, true).data;
 }
