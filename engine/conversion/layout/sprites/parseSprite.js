@@ -82,11 +82,8 @@ export function parseSprite(lexes, isTopLevel, name, prevSpriteData) {
       let tempArr = spriteData;
       tempArr.push(currentSprite);
 
-      let index = -1;
-
-      for (const i in tempArr) {
-        if (tempArr[i].isStage) index = i;
-      }
+      const find = tempArr.find(i => i.isStage); 
+      const index = tempArr.indexOf(find);
 
       if (index == -1) {
         throw new Error("Stage not specified.");
@@ -109,11 +106,8 @@ export function parseSprite(lexes, isTopLevel, name, prevSpriteData) {
       let tempArr = spriteData;
       tempArr.push(currentSprite);
 
-      let index = -1;
-
-      for (const i in tempArr) {
-        if (tempArr[i].isStage) index = i;
-      }
+      const find = tempArr.find(i => i.isStage); 
+      const index = tempArr.indexOf(find);
 
       if (index == -1) {
         throw new Error("Stage not specified.");
