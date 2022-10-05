@@ -67,110 +67,132 @@ export function parseSprite(lexes, isTopLevel, name, prevSpriteData) {
   }
 
   for (const lex of lexes) {
-    if (lex.type == "var") {
-      const name = generateVarName(currentSprite, lex.name);
+    switch (lex.type) {
+      case "var": {
+        const name = generateVarName(currentSprite, lex.name);
 
-      if (currentSprite.variables[name]) {
-        abort("Error", "Variable already exists.", "N/a", lex.name);
+        if (currentSprite.variables[name]) {
+          abort("Error", "Variable already exists.", "N/a", lex.name);
+        }
+
+        if (!lex.hasValue) {
+          currentSprite.variables[name] = [lex.name, 0];
+        } else {
+          currentSprite.variables[name] = [lex.name, lex.value];
+        }
+
+        break;
       }
 
-      if (!lex.hasValue) {
-        currentSprite.variables[name] = [lex.name, 0];
-      } else {
-        currentSprite.variables[name] = [lex.name, lex.value];
-      }
-    } else if (lex.type == "list") {
-      const name = generateVarName(currentSprite, lex.name, true);
+      case "globalVar": {
+        const name = generateVarName(currentSprite, lex.name);
 
-      if (currentSprite.lists[name]) {
-        abort("Error", "List already exists.", "N/a", lex.name);
-      }
+        let tempArr = spriteData;
+        tempArr.push(currentSprite);
 
-      if (!lex.hasValue) {
-        currentSprite.lists[name] = [lex.name, []];
-      } else {
-        currentSprite.lists[name] = [lex.name, parseList(lex.value)];
-      }
-    } else if (lex.type == "globalVar") {
-      const name = generateVarName(currentSprite, lex.name);
+        const find = tempArr.find((i) => i.isStage);
+        const index = tempArr.indexOf(find);
 
-      let tempArr = spriteData;
-      tempArr.push(currentSprite);
+        if (index == -1) {
+          throw new Error("Stage not specified.");
+        }
 
-      const find = tempArr.find(i => i.isStage); 
-      const index = tempArr.indexOf(find);
+        const elem =
+          index == tempArr.length - 1 ? currentSprite : tempArr[index];
 
-      if (index == -1) {
-        throw new Error("Stage not specified.");
-      }
+        if (elem.variables[name]) {
+          abort("Error", "Variable already exists.", "N/a", lex.name);
+        }
 
-      const elem = index == tempArr.length - 1 ? currentSprite : tempArr[index];
-
-      if (elem.variables[name]) {
-        abort("Error", "Variable already exists.", "N/a", lex.name);
-      }
-
-      if (!lex.hasValue) {
-        elem.variables[name] = [lex.name, 0];
-      } else {
-        elem.variables[name] = [lex.name, lex.value];
-      }
-    } else if (lex.type == "globalList") {
-      const name = generateVarName(currentSprite, lex.name, true);
-
-      let tempArr = spriteData;
-      tempArr.push(currentSprite);
-
-      const find = tempArr.find(i => i.isStage); 
-      const index = tempArr.indexOf(find);
-
-      if (index == -1) {
-        throw new Error("Stage not specified.");
-      }
-
-      const elem = index == tempArr.length - 1 ? currentSprite : tempArr[index];
-
-      if (elem.lists[name]) {
-        abort("Error", "List already exists.", "N/a", lex.name);
-      }
-
-      if (!lex.hasValue) {
-        elem.lists[name] = [lex.name, []];
-      } else {
-        elem.lists[name] = [lex.name, parseList(lex.value)];
-      }
-    } else if (lex.type == "command") {
-      let functionVal = "";
-
-      function getData(array, item) {
-        let prevItem = item;
-        
-        for (const i of array) {
-          if (prevItem[i]) {
-            prevItem = prevItem[i];
-          } else {
-            return undefined;
-          }
+        if (!lex.hasValue) {
+          elem.variables[name] = [lex.name, 0];
+        } else {
+          elem.variables[name] = [lex.name, lex.value];
         }
         
-        return prevItem;
+        break;
       }
 
-      const newCommand = lex.command;
-      newCommand.unshift("commands");
+      case "list": {
+        const name = generateVarName(currentSprite, lex.name, true);
 
-      functionVal = getData(newCommand, layout);
+        if (currentSprite.lists[name]) {
+          abort("Error", "List already exists.", "N/a", lex.name);
+        }
 
-      if (!functionVal) {
-        abort("Error", "Command not found.", "N/a", lex.command.join("."));
+        if (!lex.hasValue) {
+          currentSprite.lists[name] = [lex.name, []];
+        } else {
+          currentSprite.lists[name] = [lex.name, parseList(lex.value)];
+        }
+
+        break;
       }
 
-      const data = functionVal(lex, currentSprite, spriteData);
+      case "globalList": {
+        const name = generateVarName(currentSprite, lex.name, true);
 
-      if (data.mergeSprite) {
-        currentSprite = mergeObjects(currentSprite, data.mergeSprite);
-      } else if (data.addSprites) {
-        spriteData.push(...data.addSprites);
+        let tempArr = spriteData;
+        tempArr.push(currentSprite);
+
+        const find = tempArr.find((i) => i.isStage);
+        const index = tempArr.indexOf(find);
+
+        if (index == -1) {
+          throw new Error("Stage not specified.");
+        }
+
+        const elem =
+          index == tempArr.length - 1 ? currentSprite : tempArr[index];
+
+        if (elem.lists[name]) {
+          abort("Error", "List already exists.", "N/a", lex.name);
+        }
+
+        if (!lex.hasValue) {
+          elem.lists[name] = [lex.name, []];
+        } else {
+          elem.lists[name] = [lex.name, parseList(lex.value)];
+        }
+
+        break;
+      }
+
+      case "command": {
+        let functionVal = "";
+
+        function getData(array, item) {
+          let prevItem = item;
+
+          for (const i of array) {
+            if (prevItem[i]) {
+              prevItem = prevItem[i];
+            } else {
+              return undefined;
+            }
+          }
+
+          return prevItem;
+        }
+
+        const newCommand = lex.command;
+        newCommand.unshift("commands");
+
+        functionVal = getData(newCommand, layout);
+
+        if (!functionVal) {
+          abort("Error", "Command not found.", "N/a", lex.command.join("."));
+        }
+
+        const data = functionVal(lex, currentSprite, spriteData);
+
+        if (data.mergeSprite) {
+          currentSprite = mergeObjects(currentSprite, data.mergeSprite);
+        } else if (data.addSprites) {
+          spriteData.push(...data.addSprites);
+        }
+
+        break;
       }
     }
   }
