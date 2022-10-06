@@ -75,19 +75,14 @@ export function parseSprite(lexes, isTopLevel, name, prevSpriteData) {
           abort("Error", "Variable already exists.", "N/a", lex.name);
         }
 
-        if (!lex.hasValue) {
-          currentSprite.variables[name] = [lex.name, 0];
-        } else {
-          currentSprite.variables[name] = [lex.name, lex.value];
-        }
-
+        currentSprite.variables[name] =  [lex.name, lex.hasValue ? lex.value : 0];
         break;
       }
 
       case "globalVar": {
         const name = generateVarName(currentSprite, lex.name);
 
-        let tempArr = spriteData;
+        let tempArr = Object.create(spriteData);
         tempArr.push(currentSprite);
 
         const find = tempArr.find((i) => i.isStage);
@@ -104,12 +99,7 @@ export function parseSprite(lexes, isTopLevel, name, prevSpriteData) {
           abort("Error", "Variable already exists.", "N/a", lex.name);
         }
 
-        if (!lex.hasValue) {
-          elem.variables[name] = [lex.name, 0];
-        } else {
-          elem.variables[name] = [lex.name, lex.value];
-        }
-        
+        elem.variables[name] = [lex.name, lex.hasValue ? lex.value : 0];
         break;
       }
 
@@ -120,11 +110,7 @@ export function parseSprite(lexes, isTopLevel, name, prevSpriteData) {
           abort("Error", "List already exists.", "N/a", lex.name);
         }
 
-        if (!lex.hasValue) {
-          currentSprite.lists[name] = [lex.name, []];
-        } else {
-          currentSprite.lists[name] = [lex.name, parseList(lex.value)];
-        }
+        currentSprite.lists[name] = [lex.name, lex.hasValue ? parseList(lex.value) : []];
 
         break;
       }
@@ -132,7 +118,7 @@ export function parseSprite(lexes, isTopLevel, name, prevSpriteData) {
       case "globalList": {
         const name = generateVarName(currentSprite, lex.name, true);
 
-        let tempArr = spriteData;
+        let tempArr = Object.create(spriteData);
         tempArr.push(currentSprite);
 
         const find = tempArr.find((i) => i.isStage);
@@ -176,19 +162,18 @@ export function parseSprite(lexes, isTopLevel, name, prevSpriteData) {
         }
 
         const newCommand = lex.command;
-        newCommand.unshift("commands");
-
         functionVal = getData(newCommand, layout);
 
         if (!functionVal) {
           abort("Error", "Command not found.", "N/a", lex.command.join("."));
         }
 
-        const data = functionVal(lex, currentSprite, spriteData);
+        const data = functionVal(lex, currentSprite, Object.create(spriteData));
 
         if (data.mergeSprite) {
           currentSprite = mergeObjects(currentSprite, data.mergeSprite);
         } else if (data.addSprites) {
+          console.log(...data.addSprites)
           spriteData.push(...data.addSprites);
         }
 
@@ -197,8 +182,8 @@ export function parseSprite(lexes, isTopLevel, name, prevSpriteData) {
     }
   }
 
-  console.log(lexes);
-  console.log(currentSprite, "\n");
+  //console.log(lexes);
+  //console.log(currentSprite, "\n");
 
   if (currentSprite.costumes.length == 0) {
     abort("Error", "No costumes found in sprite", "N/a", "N/a");

@@ -18,5 +18,7 @@ export function convert(lex) {
     meta: meta
   };
 
-  const data = parseSprite(lex, true).data;
+  json.targets = parseSprite(lex, true).data;
+
+  console.log(json)
 }
