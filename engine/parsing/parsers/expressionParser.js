@@ -22,10 +22,6 @@ export function parseExpression(expression) {
     } else if (expSplit[i].startsWith("[") && expSplit[i].endsWith("]")) {
       abort("SyntaxError", "Nested arrays are not supported by Scratch.", "N/a", expression);
     } else {
-      if (!Number.isNaN(parseInt(expSplit[i]))) {
-        abort("SyntaxError", "Numbers are not supported by Scratch.", "N/a", expression);
-      }
-      
       const index = lookUp.indexOf(expSplit[i]);
 
       if (index == -1) {

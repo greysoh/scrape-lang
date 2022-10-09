@@ -11,11 +11,10 @@ export function parseMisc(inputIndex, skipLineRaw, lines) {
 
   /*
     Parses:
-      - if (done)
-      - else (done)
-      - else if (done)
-      - sleep (if it has an expression, else we just sleep in seconds with the argument) 
-      - while (if it contains true, it loops forever, else, we handle the expression) [done]
+      - if
+      - else
+      - else if
+      - while (if it contains true, it loops forever, else, we handle the expression)
     */
 
   if (input.trim().startsWith("if")) { // When we reach an if statement, 
@@ -170,31 +169,6 @@ export function parseMisc(inputIndex, skipLineRaw, lines) {
 
     token.body = innerToken.args[0].value; // We set the body,
     skipLine = innerToken.skipLine; // and skip lines,
-
-    return { token: token, skipLine: skipLine }; // and return the token.
-  } else if (input.trim().startsWith("sleep")) { // Else, 
-    token.type = "expression"; // we set the type information,
-
-    let rawArgs = []; // and create an array to store the arguments,
-
-    try {
-      rawArgs = input.split("(")[1].split(")")[0]; // and try to parse them.
-    } catch (e) {
-      abort( // If we can't, we give a syntaxerror.
-        "SyntaxError",
-        "Invalid arguments for '" + token.type + "' statement",
-        parseInt(inputIndex) + 1,
-        input
-      );
-    }
-
-    if (!Number.isNaN(parseFloat(rawArgs))) { // If it is a number,
-      token.name = "sleepTime"; // we set the name to sleepTime,
-      token.args = parseInt(rawArgs); // and we set the number as the argument.
-    } else {
-      token.name = "sleep"; // Else,
-      token.args = parseExpression(rawArgs).args; // we parse the expression as arguments,
-    }
 
     return { token: token, skipLine: skipLine }; // and return the token.
   } else {

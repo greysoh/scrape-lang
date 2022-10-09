@@ -74,6 +74,11 @@ export function tokenize(input) {
           type: "string",
           value: i.slice(1, -1),
         });
+      } else if (!Number.isNaN(parseInt(i))) {
+        token.args.push({
+          type: "number",
+          value: parseFloat(i),
+        })
       } else if (i.startsWith("function")) {
         const innerToken = innerParser(inputIndex, skipLine, lines);
 
@@ -83,15 +88,6 @@ export function tokenize(input) {
 
         skipLine = innerToken.skipLine;
       } else {
-        if (!Number.isNaN(parseInt(i))) {
-          abort(
-            "SyntaxError",
-            `'${i}' is not a valid argument or variable`,
-            parseInt(inputIndex) + 1,
-            input
-          );
-        }
-
         token.args.push({
           type: "variable",
           value: i,

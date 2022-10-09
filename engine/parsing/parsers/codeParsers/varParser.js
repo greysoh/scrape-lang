@@ -36,6 +36,11 @@ export function parseArgsNS(str) {
     }
 
     return value; // Returns the array
+  } else if (!Number.isNaN(parseInt(str))) {
+    value.type = "number";
+    value.value = parseFloat(str);
+
+    return value;
   } else {
     return null; // Returns null if it's not a string or an array
   }
@@ -84,15 +89,7 @@ export function varParseArgs(str, disableArrays) {
       value.type = "argument";
       value.value = parseArgsNS(strSplit[i]);
 
-      if (!Number.isNaN(parseInt(strSplit[i]))) {
-        // Checks if it's a number
-        abort(
-          "SyntaxError",
-          "Numbers are not supported by Scratch.",
-          "N/a",
-          str
-        );
-      } else if (value.value == null) {
+      if (value.value == null) {
         // Checks if it's a variable
         value.type = "variable";
         value.value = { type: "var", name: strSplit[i] };
