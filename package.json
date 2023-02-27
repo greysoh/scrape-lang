@@ -1,0 +1,19 @@
+{
+  "name": "libscrape",
+  "version": "0.0.1",
+  "description": "Alternative assembler for Scratch, where you specify the blocks in JavaScript",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/greysoh/scrape-lang.git"
+  },
+  "author": "@creamy-dev",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/greysoh/scrape-lang/issues"
+  },
+  "homepage": "https://github.com/greysoh/scrape-lang#readme"
+}
